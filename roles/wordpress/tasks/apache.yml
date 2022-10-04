@@ -1,0 +1,6 @@
+---
+        - name: Install apache httpd 
+          ansible.builtin.apt:
+                  name: apache2
+                  state: present 
+                  update_cache: yes

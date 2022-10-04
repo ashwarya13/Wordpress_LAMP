@@ -1,0 +1,55 @@
+---
+        - name: Install mysql package
+          apt:
+                  name: 
+                      - mysql-server
+                      - python3
+                      - gcc
+                      - python3-pip  
+                  state: present
+        - name: Install Required pip modules
+          ansible.builtin.pip:
+                  name: PyMySQL
+                  state: present
+        - name: Start mysql service
+          systemd:
+                name: mysql
+                state: restarted
+                enabled: yes
+       
+        - name: Check MYSQL root password
+          block:
+                  - name: Set first time password
+                    mysql_user:
+                         login_unix_socket: /var/run/mysqld/mysqld.sock  
+                         login_host: 'localhost'
+                         login_user: 'root'
+                         login_password: ''
+                         name: 'root'
+                         password: '{{ mysql_root_password }}'
+                         state: present
+          rescue:
+                  - name: Print when errors
+                    ansible.builtin.debug: 
+                                msg: 'Password already set'
+
+        - name: Create Wordpress  database
+          block: 
+                 - name: First time DB Creation
+                   command: |
+                         mysql -p{{ mysql_root_password }} -ne "{{ item }}"
+                   with_items: 
+                       - CREATE DATABASE {{ db_name }} DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci
+                   changed_when: False
+          rescue:
+                   - name: Print when exists
+                     ansible.builtin.debug:
+                             msg: 'Database Already exists' 
+        - name: Create Wordpress user to access the newly created Wordpress database
+          command: |
+                 mysql -p{{ mysql_root_password }} -ne "{{ item }}"
+          with_items:
+                    - CREATE USER '{{ db_user }}'@'localhost' IDENTIFIED BY '{{ db_pass }}' 
+                    - GRANT ALL ON WordPressDB.* TO '{{ db_user }}'@'localhost'
+                    - FLUSH PRIVILEGES
+          changed_when: False

@@ -1,0 +1,9 @@
+---
+mysql_root_password: 'root'
+ansible_python_interpreter: /usr/bin/python3
+root_dir_name: wordpress
+hostname: "{{ inventory_hostname }}"
+db_name: WordPressDB
+db_user: wordpress
+db_pass: wordpress
+# vars file for wordpress

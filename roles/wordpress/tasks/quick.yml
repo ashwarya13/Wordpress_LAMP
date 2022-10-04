@@ -1,0 +1,10 @@
+---
+- name: Check ansible facts value
+  become: true
+  vars:
+          hostname: "{{ inventory_hostname }}"
+  hosts: all
+  tasks:
+          - name: Print all available facts
+            ansible.builtin.debug:
+                    msg: "this is my host ip {{ hostname }}"

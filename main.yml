@@ -1,0 +1,6 @@
+---
+- name: Setup Wordpress on Linux server
+  hosts: all
+  become: true
+  roles:
+        - role: wordpress

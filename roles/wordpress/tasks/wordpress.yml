@@ -1,0 +1,60 @@
+---
+    - name: Create root dir
+      file:
+        path: /var/www/{{ root_dir_name }}
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0775
+    - name: Add virtul host for wordpres and Enable .htaccess Overrides
+      template:
+        src: apache_virtual_host_conf.j2
+        dest: /etc/apache2/sites-available/wordpress.conf
+    - name: Enable new site , disable default one & enable mod rewrite
+      shell: |
+       sudo a2ensite {{ root_dir_name}}
+       sudo a2dissite 000-default
+       sudo a2enmod rewrite
+    - name: Download wordpress tar file to /tmp
+      get_url:
+              url: https://wordpress.org/latest.tar.gz
+              dest: /tmp
+              mode: 0775
+    - name: Extract wordpress tar
+      ansible.builtin.unarchive:
+       src: /tmp/wordpress-6.0.2.tar.gz
+       dest: /tmp
+       remote_src: true
+    - name: Get Salts
+      command: curl -s https://api.wordpress.org/secret-key/1.1/salt/
+      register: salts
+    - name: Update WP_CONFIG file
+      template:
+        src=wp_config.j2
+        dest=/tmp/wordpress/wp-config.php
+    - name: Move files to Wordpress folder and set permissions
+      shell: |
+         sudo {{ item }}
+      with_items:
+           - touch /tmp/wordpress/.htaccess
+           - cp -a /tmp/wordpress/. /var/www/wordpress
+           - chown -R www-data:www-data /var/www/wordpress
+           - find /var/www/wordpress/ -type d -exec chmod 750 {} \;
+           - find /var/www/wordpress/ -type f -exec chmod 640 {} \;
+      changed_when: False
+    - name: update dir_conf to priortize php
+      become: true
+      template:
+              src: mod.j2
+              dest: /etc/apache2/mods-available/dir.conf
+    - name: remove default index.html
+      file:
+              path: /var/www/html/index.html
+              state: absent
+    - name: Start Apache
+      systemd:
+              name: apache2
+              state: restarted
+              enabled: True
+      notify:
+              - Reload Apache
