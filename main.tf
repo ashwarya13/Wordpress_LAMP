@@ -3,7 +3,7 @@ locals {
   vpc_id = aws_default_vpc.defaultvpc.id
   ssh_user = "ubuntu"
   key_name = "demo"
-  private_key_path = "/home/labsuser/Desktop/wordpress_play/demo.pem"
+  private_key_path = "${path.cwd}/demo.pem"
 }
 
 provider "aws" {
@@ -49,7 +49,7 @@ resource "aws_instance" "web" {
   key_name = local.key_name
 
   tags = {
-    Name = "Demo ec2"
+    Name = "Wordpress ec2"
   }
 
   connection {
@@ -64,7 +64,13 @@ resource "aws_instance" "web" {
     inline = [
       "hostname"
     ]
-  }
+   }
+ 
+  provisioner "local-exec" {
+  command =  "echo '[defaults]\nhost_key_checking=False' | sudo tee /etc/ansible/ansible.cfg"
+ }
+
+
 
   provisioner "local-exec" {
     command = "echo ${self.public_ip} > myhosts"
