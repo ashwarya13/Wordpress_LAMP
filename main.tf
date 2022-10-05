@@ -77,6 +77,9 @@ resource "aws_instance" "web" {
   command =  "echo '[defaults]\nhost_key_checking=False' | sudo tee /etc/ansible/ansible.cfg"
  }
 
+  provisioner "local-exec" {
+  command =  "sudo chmod 400 demo.pem"
+ }
 
 
   provisioner "local-exec" {
